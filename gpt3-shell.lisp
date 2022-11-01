@@ -20,7 +20,7 @@
   (py4cl:python-exec "import openai")
   (py4cl:python-exec "openai.api_key = " (py4cl::pythonize api-key))
 
-  (py4cl:python-exec "def get_text(resp): return resp.choices[0][\"text\"]")
+  (py4cl:python-exec "def get_completion(openai, prompt, engine, max_tokens, temperature, top_p, frequency_penalty, presence_penalty, stop): return openai.Completion.create(prompt=prompt.replace('[N]', '\\n'), engine=engine, max_tokens=max_tokens, temperature=temperature, top_p=top_p, frequency_penalty=frequency_penalty, presence_penalty=presence_penalty, stop=[s.replace('[N]', '\\n') for s in stop]).choices[0][\"text\"]")
 
   (defparameter *engine* engine)
   (defparameter *default-response-length* response-length)
@@ -40,19 +40,19 @@
                              (stop-seq nil))
 ;`````````````````````````````````````````````````````````````````````````````````
 ; Generates a response from GPT3 given a prompt and optional parameters.
+; NOTE: use [N] in the prompt for newlines.
 ;
   (when (not stop-seq)
     (setq stop-seq (py4cl::pythonize stop-seq)))
   (let (response)
-    (setq response (py4cl:python-call "get_text"
-      (py4cl:python-call "openai.Completion.create"
-        :prompt prompt
-        :engine *engine*
-        :max_tokens response-length
-        :temperature temperature
-        :top_p top-p
-        :frequency_penalty frequency-penalty
-        :presence_penalty presence-penalty
-        :stop stop-seq)))
+    (setq response (py4cl:python-call "get_completion" (py4cl:python-eval "openai")
+      :prompt prompt
+      :engine *engine*
+      :max_tokens response-length
+      :temperature temperature
+      :top_p top-p
+      :frequency_penalty frequency-penalty
+      :presence_penalty presence-penalty
+      :stop stop-seq))
     response
 )) ; END generate

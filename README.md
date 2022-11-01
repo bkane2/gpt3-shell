@@ -29,9 +29,9 @@ $ (gpt3-shell:init <api-key> :engine "text-davinci-001")
 ```
 
 ### Generation
-Generate a prompt using the `generate` function, given a string input. Newlines should be given as `\\n` in the Lisp string. For example:
+Generate a prompt using the `generate` function, given a string input. Newlines should be given as `[N]` in the Lisp string. For example:
 ```lisp
-(gpt3-shell:generate "Complete the conversation between Alice and Bob:\\n\\nAlice:")
+(gpt3-shell:generate "Complete the conversation between Alice and Bob:[N][N]Alice:")
 ```
 
 The following keyword parameters can be given as arguments to the `generate` function (see the [OpenAI](https://beta.openai.com/docs/api-reference/completions/create) documentation for more details):
@@ -42,8 +42,8 @@ The following keyword parameters can be given as arguments to the `generate` fun
 * presence-penalty
 * stop-seq
 
-`stop-seq` should be a vector of strings (again with newlines as `\\n`). For example,
+`stop-seq` should be a vector of strings (again with newlines as `[N]`). For example,
 ```lisp
-(gpt3-shell:generate "Complete the conversation between Alice and Bob:\\n\\nAlice:"
-  :stop-seq (vector "\\nBob:" "\\n"))
+(gpt3-shell:generate "Complete the conversation between Alice and Bob:[N][N]Alice:"
+  :stop-seq (vector "[N]Bob:" "[N]"))
 ```
