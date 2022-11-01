@@ -20,6 +20,8 @@
   (py4cl:python-exec "import openai")
   (py4cl:python-exec "openai.api_key = " (py4cl::pythonize api-key))
 
+  (py4cl:python-exec "def get_text(resp): return resp.choices[0][\"text\"]")
+
   (defparameter *engine* engine)
   (defparameter *default-response-length* response-length)
   (defparameter *default-temperature* temperature)
@@ -39,15 +41,18 @@
 ;`````````````````````````````````````````````````````````````````````````````````
 ; Generates a response from GPT3 given a prompt and optional parameters.
 ;
+  (when (not stop-seq)
+    (setq stop-seq (py4cl::pythonize stop-seq)))
   (let (response)
-    (setq response (py4cl:python-call "openai.Completion.create"
-      :prompt prompt
-      :engine *engine*
-      :max_tokens response-length
-      :temperature temperature
-      :top_p top-p
-      :frequency_penalty frequency-penalty
-      :presence_penalty presence-penalty
-      :stop stop-seq))
-    (py4cl:chain response choices ([] 0) ([] "text"))
+    (setq response (py4cl:python-call "get_text"
+      (py4cl:python-call "openai.Completion.create"
+        :prompt prompt
+        :engine *engine*
+        :max_tokens response-length
+        :temperature temperature
+        :top_p top-p
+        :frequency_penalty frequency-penalty
+        :presence_penalty presence-penalty
+        :stop stop-seq)))
+    response
 )) ; END generate

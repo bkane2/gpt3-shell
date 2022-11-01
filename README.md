@@ -9,7 +9,9 @@ A simple package for generating text using GPT-3 from Lisp.
 - [openai](https://github.com/openai/openai-python), Install with `pip install openai`.
 - py4cl (loaded automatically via quicklisp)
 
-The current version of the code has only been tested on SBCL.
+The current version of the code has only been tested on SBCL on Linux.
+
+If difficulties are encountered using the library on Windows, you may need to install [py4cl2](https://github.com/digikar99/py4cl2) locally, and set the `pycmd` config variable for py4cl2 to your `python.exe` path (see `*config* / config-var` in the [documentation](https://digikar99.github.io/py4cl2/) to see how to do this). In this case, you will need to swap out all py4cl function calls with the corresponding py4cl2 function calls in the code (e.g., replace `py4cl:python-exec` with `py4cl2:pyexec`).
 
 ## Installation
 1. Install quicklisp by following instructions at https://www.quicklisp.org/beta/
