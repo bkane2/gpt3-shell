@@ -20,6 +20,8 @@
   (py4cl:python-exec "import openai")
   (py4cl:python-exec "openai.api_key = " (py4cl::pythonize api-key))
 
+  (defparameter *openai* (py4cl:python-eval "openai"))
+
   (py4cl:python-exec "def get_completion(openai, prompt, engine, max_tokens, temperature, top_p, frequency_penalty, presence_penalty, stop): return openai.Completion.create(prompt=prompt.replace('[N]', '\\n'), engine=engine, max_tokens=max_tokens, temperature=temperature, top_p=top_p, frequency_penalty=frequency_penalty, presence_penalty=presence_penalty, stop=[s.replace('[N]', '\\n') for s in stop]).choices[0][\"text\"]")
 
   (defparameter *engine* engine)
@@ -45,7 +47,7 @@
   (when (not stop-seq)
     (setq stop-seq (py4cl::pythonize stop-seq)))
   (let (response)
-    (setq response (py4cl:python-call "get_completion" (py4cl:python-eval "openai")
+    (setq response (py4cl:python-call "get_completion" *openai*
       :prompt prompt
       :engine *engine*
       :max_tokens response-length
