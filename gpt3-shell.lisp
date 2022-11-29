@@ -11,7 +11,7 @@
 (defparameter *default-presence-penalty* nil)
 
 
-(defun init (api-key &key (engine "text-davinci-001") (response-length 64)
+(defun init (api-key &key (engine "text-davinci-003") (response-length 64)
                           (temperature 0.7) (top-p 1) (frequency-penalty 0)
                           (presence-penalty 0))
 ;```````````````````````````````````````````````````````````````````````````````
