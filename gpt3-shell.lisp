@@ -58,3 +58,65 @@
       :stop stop-seq))
     response
 )) ; END generate
+
+
+(defun generate-with-key (api-key prompt
+                          &key (engine "text-davinci-003")
+                               (response-length 64)
+                               (temperature 0.7)
+                               (top-p 1)
+                               (frequency-penalty 0)
+                               (presence-penalty 0)
+                               (stop-seq nil))
+;`````````````````````````````````````````````````````````````````````````````````
+; Bypasses the initialization step by passing the API key as an argument to the generation
+; function. Due to a bug where occasionally the value of *openai* becomes nil over longer
+; sessions, this function is generally more reliable (but may require some overhead for
+; reading and passing the api-key each time).
+; NOTE: use [N] in the prompt for newlines.
+  (when (not stop-seq)
+    (setq stop-seq (py4cl::pythonize stop-seq)))
+
+  (when (or (not (boundp '*openai*)) (null *openai*))
+    (py4cl:python-exec "import openai")
+    (defparameter *openai* (py4cl:python-eval "openai")))
+
+  (py4cl:python-exec "def get_completion_with_key(openai, api_key, prompt, engine, max_tokens, temperature, top_p, frequency_penalty, presence_penalty, stop): return openai.Completion.create(api_key, prompt=prompt.replace('[N]', '\\n'), engine=engine, max_tokens=max_tokens, temperature=temperature, top_p=top_p, frequency_penalty=frequency_penalty, presence_penalty=presence_penalty, stop=[s.replace('[N]', '\\n') for s in stop]).choices[0][\"text\"]")
+
+  (let (response)
+    (setq response (py4cl:python-call "get_completion_with_key" *openai*
+      :api_key api-key
+      :prompt prompt
+      :engine nil
+      :max_tokens response-length
+      :temperature temperature
+      :top_p top-p
+      :frequency_penalty frequency-penalty
+      :presence_penalty presence-penalty
+      :stop stop-seq))
+    response
+)) ; END generate-with-key
+
+
+(defun generate-safe (gen-func gen-args &key (max-tries 10))
+;`````````````````````````````````````````````````````````````
+; Occasionally, the OpenAI API may throw an error due to a timeout
+; or overloaded servers. This function attepts to invoke a given
+; generation function+args repeatedly until either a non-error, non-null
+; response is given, or the number of max tries has been exceeded.
+;
+  (let ((i 0) response)
+    (loop while (and (< i max-tries) (null response)) do
+      (handler-case (apply gen-func gen-args)
+        (py4cl:python-error (c) nil))
+      (incf i))
+    (cond
+      ((null response)
+        (format t "~%===========================")
+        (format t "~% There was an error attempting to generate a response from GPT-3.")
+        (format t "~% Make sure that the generation function and generation arguments are both valid and in the correct format.")
+        (format t "~% Otherwise, you should check that the OpenAI API is still functioning properly.")
+        (format t "~%===========================~%~%")
+        "")
+      (t response))
+)) ; END generate-safe

@@ -7,4 +7,6 @@
   (:use :cl :py4cl)
   (:export
     init
-    generate))
+    generate
+    generate-with-key
+    generate-safe))
