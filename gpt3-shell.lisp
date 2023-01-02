@@ -22,7 +22,8 @@
 
   (defparameter *openai* (py4cl:python-eval "openai"))
 
-  (py4cl:python-exec "def get_completion(openai, prompt, engine, max_tokens, temperature, top_p, frequency_penalty, presence_penalty, stop): return openai.Completion.create(prompt=prompt.replace('[N]', '\\n'), engine=engine, max_tokens=max_tokens, temperature=temperature, top_p=top_p, frequency_penalty=frequency_penalty, presence_penalty=presence_penalty, stop=[s.replace('[N]', '\\n') for s in stop]).choices[0][\"text\"]")
+  (py4cl:python-exec "def get_completion_stop(openai, prompt, engine, max_tokens, temperature, top_p, frequency_penalty, presence_penalty, stop): return openai.Completion.create(prompt=prompt.replace('[N]', '\\n'), engine=engine, max_tokens=max_tokens, temperature=temperature, top_p=top_p, frequency_penalty=frequency_penalty, presence_penalty=presence_penalty, stop=[s.replace('[N]', '\\n') for s in stop]).choices[0][\"text\"]")
+  (py4cl:python-exec "def get_completion(openai, prompt, engine, max_tokens, temperature, top_p, frequency_penalty, presence_penalty, stop): return openai.Completion.create(prompt=prompt.replace('[N]', '\\n'), engine=engine, max_tokens=max_tokens, temperature=temperature, top_p=top_p, frequency_penalty=frequency_penalty, presence_penalty=presence_penalty).choices[0][\"text\"]")
 
   (defparameter *engine* engine)
   (defparameter *default-response-length* response-length)
@@ -44,10 +45,10 @@
 ; Generates a response from GPT3 given a prompt and optional parameters.
 ; NOTE: use [N] in the prompt for newlines.
 ;
-  (when (not stop-seq)
-    (setq stop-seq (py4cl::pythonize stop-seq)))
   (let (response)
-    (setq response (py4cl:python-call "get_completion" *openai*
+    (setq response (py4cl:python-call
+      (if stop-seq "get_completion_stop" "get_completion")
+      *openai*
       :prompt prompt
       :engine *engine*
       :max_tokens response-length
@@ -74,14 +75,14 @@
 ; sessions, this function is generally more reliable (but may require some overhead for
 ; reading and passing the api-key each time).
 ; NOTE: use [N] in the prompt for newlines.
-  (when (not stop-seq)
-    (setq stop-seq (py4cl::pythonize stop-seq)))
-
+;
   (when (or (not (boundp '*openai*)) (null *openai*))
     (py4cl:python-exec "import openai")
     (defparameter *openai* (py4cl:python-eval "openai")))
 
-  (py4cl:python-exec "def get_completion_with_key(openai, api_key, prompt, engine, max_tokens, temperature, top_p, frequency_penalty, presence_penalty, stop): return openai.Completion.create(api_key, prompt=prompt.replace('[N]', '\\n'), engine=engine, max_tokens=max_tokens, temperature=temperature, top_p=top_p, frequency_penalty=frequency_penalty, presence_penalty=presence_penalty, stop=[s.replace('[N]', '\\n') for s in stop]).choices[0][\"text\"]")
+  (if stop-seq
+    (py4cl:python-exec "def get_completion_with_key(openai, api_key, prompt, engine, max_tokens, temperature, top_p, frequency_penalty, presence_penalty, stop): return openai.Completion.create(api_key, prompt=prompt.replace('[N]', '\\n'), engine=engine, max_tokens=max_tokens, temperature=temperature, top_p=top_p, frequency_penalty=frequency_penalty, presence_penalty=presence_penalty, stop=[s.replace('[N]', '\\n') for s in stop]).choices[0][\"text\"]")
+    (py4cl:python-exec "def get_completion_with_key(openai, api_key, prompt, engine, max_tokens, temperature, top_p, frequency_penalty, presence_penalty, stop): return openai.Completion.create(api_key, prompt=prompt.replace('[N]', '\\n'), engine=engine, max_tokens=max_tokens, temperature=temperature, top_p=top_p, frequency_penalty=frequency_penalty, presence_penalty=presence_penalty).choices[0][\"text\"]"))
 
   (let (response)
     (setq response (py4cl:python-call "get_completion_with_key" *openai*
