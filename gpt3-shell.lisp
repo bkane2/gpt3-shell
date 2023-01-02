@@ -87,7 +87,7 @@
     (setq response (py4cl:python-call "get_completion_with_key" *openai*
       :api_key api-key
       :prompt prompt
-      :engine nil
+      :engine engine
       :max_tokens response-length
       :temperature temperature
       :top_p top-p
