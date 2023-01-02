@@ -107,8 +107,8 @@
 ;
   (let ((i 0) response)
     (loop while (and (< i max-tries) (null response)) do
-      (handler-case (apply gen-func gen-args)
-        (py4cl:python-error (c) nil))
+      (setq response (handler-case (apply gen-func gen-args)
+        (py4cl:python-error (c) nil)))
       (incf i))
     (cond
       ((null response)
