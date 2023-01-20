@@ -8,4 +8,6 @@
   (:shadow :insert)
   (:export
     init
-    generate))
+    generate
+    generate-with-key
+    generate-safe))
