@@ -4,9 +4,8 @@
 (in-package :cl-user)
 
 (defpackage :gpt3-shell
-  (:use :cl :py4cl)
+  (:use :cl :py4cl2)
   (:shadow :insert)
-  (:shadowing-import-from :py4cl python-call python-method)
   (:export
     init
     generate))

@@ -1,19 +1,21 @@
 GPT-3 Shell
 =======
 
-A simple package for generating text using GPT-3 from Lisp.
+A simple package for generating text using GPT-3 from Lisp (Windows-compatible branch)
 
 ## Dependencies
 - Quicklisp
 - [ASDF version 3 or above](https://common-lisp.net/project/asdf/archives/asdf.lisp)
 - [openai](https://github.com/openai/openai-python), Install with `pip install openai`.
-- py4cl (loaded automatically via quicklisp)
+- [py4cl2](https://github.com/digikar99/py4cl2)
 
 The current version of the code has only been tested on SBCL.
 
 ## Installation
 1. Install quicklisp by following instructions at https://www.quicklisp.org/beta/
 2. Download the latest [asdf.lisp](https://common-lisp.net/project/asdf/#downloads) file and include it in your lisp start-up script (e.g. `.sbclrc`). I recommend also overwriting `quicklisp/asdf.lisp` to eliminate the possibility of accidentally loading the out-of-date copy of `asdf.lisp` that comes with Quicklisp be default.
+3. Add py4cl2 to `quicklisp/local-packages/`.
+
 
 ## Using the package
 

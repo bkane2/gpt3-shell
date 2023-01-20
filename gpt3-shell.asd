@@ -5,7 +5,7 @@
   :name "gpt3-shell"
   :version "0.0.1"
   :author "Benjamin Kane"
-  :depends-on (:py4cl)
+  :depends-on (:py4cl2)
   :components ((:file "package")
                (:file "gpt3-shell")))
 
