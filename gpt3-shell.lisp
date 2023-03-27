@@ -99,6 +99,35 @@
 )) ; END generate-with-key
 
 
+(defun embed-with-key (api-key text &key (engine "text-embedding-ada-002"))
+;`````````````````````````````````````````````````````````````````````````````````
+; Creates a vector embedding for a given piece of text.
+; NOTE: use [N] for newlines, though these are replaced with spaces prior to embedding.
+;
+  (when (or (not (boundp '*openai*)) (null *openai*))
+    (py4cl:python-exec "import openai")
+    (defparameter *openai* (py4cl:python-eval "openai")))
+
+  (py4cl:python-exec "def embed_with_key(openai, api_key, text, engine): return openai.Embedding.create(api_key, input=[text.replace('[N]', ' ')], engine=engine)[\"data\"][0][\"embedding\"]")
+
+  (let (response)
+    (setq response (py4cl:python-call "embed_with_key" *openai*
+      :api_key api-key
+      :text text
+      :engine engine))
+    response
+)) ; END embed-with-key
+
+
+(defun dot-embeddings (emb1 emb2)
+;```````````````````````````````````
+; Computes the dot product between two vectors using numpy.
+;
+  (py4cl:python-exec "import numpy as np")
+  (py4cl:python-call "np.dot" emb1 emb2)
+) ; END dot-embeddings
+
+
 (defun generate-safe (gen-func gen-args &key (max-tries 10))
 ;`````````````````````````````````````````````````````````````
 ; Occasionally, the OpenAI API may throw an error due to a timeout

@@ -9,4 +9,6 @@
     init
     generate
     generate-with-key
-    generate-safe))
+    generate-safe
+    embed-with-key
+    dot-embeddings))
