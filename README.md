@@ -20,12 +20,12 @@ The current version of the code has only been tested on SBCL.
 ## Using the package
 
 ### Initialization
-Load the package in an SBCL instance and initialize with a valid OpenAI API key (and engine, optionally; the default is text-davinci-001).
+Load the package in an SBCL instance and initialize with a valid OpenAI API key (and engine, optionally; the default is gpt-3.5-turbo).
 ```
 $ sbcl
 $ (ql:quickload :gpt3-shell)
 $ ...[loading messages]...
-$ (gpt3-shell:init <api-key> :engine "text-davinci-001")
+$ (gpt3-shell:init <api-key> :engine "gpt-3.5-turbo")
 ```
 
 ### Generation

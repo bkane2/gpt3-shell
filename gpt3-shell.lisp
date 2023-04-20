@@ -3,7 +3,9 @@
 
 (in-package :gpt3-shell)
 
-(defparameter *engine* nil)
+(defvar *chat-models* '("gpt-3.5-turbo"))
+
+(defparameter *model* nil)
 (defparameter *default-response-length* nil)
 (defparameter *default-temperature* nil)
 (defparameter *default-top-p* nil)
@@ -11,7 +13,7 @@
 (defparameter *default-presence-penalty* nil)
 
 
-(defun init (api-key &key (engine "text-davinci-003") (response-length 64)
+(defun init (api-key &key (model "gpt-3.5-turbo") (response-length 64)
                           (temperature 0.7) (top-p 1) (frequency-penalty 0)
                           (presence-penalty 0))
 ;```````````````````````````````````````````````````````````````````````````````
@@ -22,10 +24,15 @@
 
   (defparameter *openai* (py4cl2:pyeval "openai"))
 
-  (py4cl2:pyexec "def get_completion_stop(openai, prompt, engine, max_tokens, temperature, top_p, frequency_penalty, presence_penalty, stop): return openai.Completion.create(prompt=prompt.replace('[N]', '\\n'), engine=engine, max_tokens=max_tokens, temperature=temperature, top_p=top_p, frequency_penalty=frequency_penalty, presence_penalty=presence_penalty, stop=[s.replace('[N]', '\\n') for s in stop]).choices[0][\"text\"]")
-  (py4cl2:pyexec "def get_completion(openai, prompt, engine, max_tokens, temperature, top_p, frequency_penalty, presence_penalty, stop): return openai.Completion.create(prompt=prompt.replace('[N]', '\\n'), engine=engine, max_tokens=max_tokens, temperature=temperature, top_p=top_p, frequency_penalty=frequency_penalty, presence_penalty=presence_penalty).choices[0][\"text\"]")
+  (cond
+    ((member model *chat-models*)
+      (py4cl2:pyexec "def get_completion(openai, prompt, messages, model, max_tokens, temperature, top_p, frequency_penalty, presence_penalty, stop): return openai.ChatCompletion.create(messages=[{'role': 'system', 'content': prompt.replace('[N]', '\\n')}]+[{'role': m[0], 'content': m[1].replace('[N]', '\\n')} for m in messages], model=model, max_tokens=max_tokens, temperature=temperature, top_p=top_p, frequency_penalty=frequency_penalty, presence_penalty=presence_penalty, stop=[s.replace('[N]', '\\n') for s in stop])['choices'][0]['message']['content']")
+      (py4cl2:pyexec "def get_completion(openai, prompt, messages, model, max_tokens, temperature, top_p, frequency_penalty, presence_penalty, stop): return openai.ChatCompletion.create(messages=[{'role': 'system', 'content': prompt.replace('[N]', '\\n')}]+[{'role': m[0], 'content': m[1].replace('[N]', '\\n')} for m in messages], model=model, max_tokens=max_tokens, temperature=temperature, top_p=top_p, frequency_penalty=frequency_penalty, presence_penalty=presence_penalty)['choices'][0]['message']['content']"))
+    (t
+      (py4cl2:pyexec "def get_completion_stop(openai, prompt, messages, model, max_tokens, temperature, top_p, frequency_penalty, presence_penalty, stop): return openai.Completion.create(prompt=prompt.replace('[N]', '\\n'), model=model, max_tokens=max_tokens, temperature=temperature, top_p=top_p, frequency_penalty=frequency_penalty, presence_penalty=presence_penalty, stop=[s.replace('[N]', '\\n') for s in stop]).choices[0][\"text\"]")
+      (py4cl2:pyexec "def get_completion(openai, prompt, messages, model, max_tokens, temperature, top_p, frequency_penalty, presence_penalty, stop): return openai.Completion.create(prompt=prompt.replace('[N]', '\\n'), model=model, max_tokens=max_tokens, temperature=temperature, top_p=top_p, frequency_penalty=frequency_penalty, presence_penalty=presence_penalty).choices[0][\"text\"]")))
 
-  (defparameter *engine* engine)
+  (defparameter *model* model)
   (defparameter *default-response-length* response-length)
   (defparameter *default-temperature* temperature)
   (defparameter *default-top-p* top-p)
@@ -35,7 +42,18 @@
 ) ; END init
 
 
-(defun generate (prompt &key (response-length *default-response-length*)
+(defun parse-messages (messages)
+;``````````````````````````````````
+; Parses a list of chat messages to a vector form.
+;
+  (make-array (list (length messages)
+                    (length (first messages)))
+              :initial-contents messages)
+) ; END parse-messages
+
+
+(defun generate (prompt &key (messages nil)
+                             (response-length *default-response-length*)
                              (temperature *default-temperature*)
                              (top-p *default-top-p*)
                              (frequency-penalty *default-frequency-penalty*)
@@ -49,7 +67,8 @@
         (if stop-seq "get_completion_stop" "get_completion")
         *openai*
         :prompt prompt
-        :engine *engine*
+        :messages (parse-messages messages)
+        :model *model*
         :max_tokens response-length
         :temperature (py4cl2:pycall "float" temperature)
         :top_p top-p
@@ -61,7 +80,8 @@
 
 
 (defun generate-with-key (api-key prompt
-                          &key (engine "text-davinci-003")
+                          &key (messages nil)
+                               (model "gpt-3.5-turbo")
                                (response-length 64)
                                (temperature 0.7)
                                (top-p 1)
@@ -79,15 +99,20 @@
     (py4cl2:pyexec "import openai")
     (defparameter *openai* (py4cl2:pyeval "openai")))
 
-  (if stop-seq
-    (py4cl2:pyexec "def get_completion_with_key(openai, api_key, prompt, engine, max_tokens, temperature, top_p, frequency_penalty, presence_penalty, stop): return openai.Completion.create(api_key, prompt=prompt.replace('[N]', '\\n'), engine=engine, max_tokens=max_tokens, temperature=temperature, top_p=top_p, frequency_penalty=frequency_penalty, presence_penalty=presence_penalty, stop=[s.replace('[N]', '\\n') for s in stop]).choices[0][\"text\"]")
-    (py4cl2:pyexec "def get_completion_with_key(openai, api_key, prompt, engine, max_tokens, temperature, top_p, frequency_penalty, presence_penalty, stop): return openai.Completion.create(api_key, prompt=prompt.replace('[N]', '\\n'), engine=engine, max_tokens=max_tokens, temperature=temperature, top_p=top_p, frequency_penalty=frequency_penalty, presence_penalty=presence_penalty).choices[0][\"text\"]"))
+  (if (member model *chat-models*)
+    (if stop-seq
+      (py4cl2:pyexec "def get_completion_with_key(openai, api_key, prompt, messages, model, max_tokens, temperature, top_p, frequency_penalty, presence_penalty, stop): return openai.ChatCompletion.create(api_key, messages=[{'role': 'system', 'content': prompt.replace('[N]', '\\n')}]+[{'role': m[0], 'content': m[1].replace('[N]', '\\n')} for m in messages], model=model, max_tokens=max_tokens, temperature=temperature, top_p=top_p, frequency_penalty=frequency_penalty, presence_penalty=presence_penalty, stop=[s.replace('[N]', '\\n') for s in stop])['choices'][0]['message']['content']")
+      (py4cl2:pyexec "def get_completion_with_key(openai, api_key, prompt, messages, model, max_tokens, temperature, top_p, frequency_penalty, presence_penalty, stop): return openai.ChatCompletion.create(api_key, messages=[{'role': 'system', 'content': prompt.replace('[N]', '\\n')}]+[{'role': m[0], 'content': m[1].replace('[N]', '\\n')} for m in messages], model=model, max_tokens=max_tokens, temperature=temperature, top_p=top_p, frequency_penalty=frequency_penalty, presence_penalty=presence_penalty)['choices'][0]['message']['content']"))
+    (if stop-seq
+      (py4cl2:pyexec "def get_completion_with_key(openai, api_key, prompt, messages, model, max_tokens, temperature, top_p, frequency_penalty, presence_penalty, stop): return openai.Completion.create(api_key, prompt=prompt.replace('[N]', '\\n'), model=model, max_tokens=max_tokens, temperature=temperature, top_p=top_p, frequency_penalty=frequency_penalty, presence_penalty=presence_penalty, stop=[s.replace('[N]', '\\n') for s in stop]).choices[0][\"text\"]")
+      (py4cl2:pyexec "def get_completion_with_key(openai, api_key, prompt, messages, model, max_tokens, temperature, top_p, frequency_penalty, presence_penalty, stop): return openai.Completion.create(api_key, prompt=prompt.replace('[N]', '\\n'), model=model, max_tokens=max_tokens, temperature=temperature, top_p=top_p, frequency_penalty=frequency_penalty, presence_penalty=presence_penalty).choices[0][\"text\"]")))
 
   (let (response)
     (setq response (py4cl2:pycall "get_completion_with_key" *openai*
       :api_key api-key
       :prompt prompt
-      :engine engine
+      :messages (parse-messages messages)
+      :model model
       :max_tokens response-length
       :temperature (py4cl2:pycall "float" temperature)
       :top_p top-p
