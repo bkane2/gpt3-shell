@@ -13,7 +13,7 @@
 (defparameter *default-presence-penalty* nil)
 
 
-(defun init (api-key &key (model "gpt-3.5-turbo") (response-length 64)
+(defun init (api-key &key (model "gpt-3.5-turbo") (response-length 512)
                           (temperature 0.7) (top-p 1) (frequency-penalty 0)
                           (presence-penalty 0))
 ;```````````````````````````````````````````````````````````````````````````````
@@ -82,7 +82,7 @@
 (defun generate-with-key (api-key prompt
                           &key (messages nil)
                                (model "gpt-3.5-turbo")
-                               (response-length 64)
+                               (response-length 512)
                                (temperature 0.7)
                                (top-p 1)
                                (frequency-penalty 0)
